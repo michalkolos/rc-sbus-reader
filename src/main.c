@@ -78,12 +78,12 @@ int main(int argc, char const *argv[]){
     // settings above, specifically VMIN and VTIME
     
     while(1){
-        int n = read(serial_port, &read_char, sizeof(read_buf));
+        int n = read(serial_port, &read_buf, sizeof(read_buf));
         // n is the number of bytes read. n may be 0 if no bytes were received, and can also be negative to signal an error.
 
         if(n >= 0){
 
-            switch (read_char)
+            switch (read_buf[0])
             {
             case 0x0F:
                 packetIndex = 0;
