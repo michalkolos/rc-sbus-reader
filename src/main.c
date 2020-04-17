@@ -12,7 +12,7 @@
 
 int main(int argc, char const *argv[]){
 
-    int serial_port = open("/dev/ttyUSB0", O_RDWR);
+    int serial_port = open("/dev/ttyS0", O_RDWR);
 
     // Check for errors
     if (serial_port < 0) {
