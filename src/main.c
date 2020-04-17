@@ -93,7 +93,7 @@ int main(int argc, char const *argv[]){
             // case 0x00:
 
             //     for(int i = 0; i < 16; i++){
-            //         printf("%c ", packet[i]);
+            //         printf("%d ", (int)packet[i]);
             //     }
 
             //     printf("\nPacket end\n");
@@ -105,7 +105,11 @@ int main(int argc, char const *argv[]){
             //     break;
             // }
 
-            printf("%s\n", read_buf);
+            for(int i = 0; i < strlen(read_buf); i++){
+                    printf("%d ", (int)read_buf[i]);
+                }
+
+            // printf("%s\n", read_buf);
         }
     }
 
