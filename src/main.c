@@ -87,6 +87,7 @@ int main(int argc, char const *argv[]){
             {
             case 0x0F:
                 packetIndex = 0;
+                printf("Packet Start\n");
                 break;
 
             case 0x00:
@@ -95,7 +96,7 @@ int main(int argc, char const *argv[]){
                     printf("%c ", packet[i]);
                 }
 
-                printf("\n");
+                printf("\nPacket end\n");
 
                 break;
             
