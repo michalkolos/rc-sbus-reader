@@ -104,9 +104,6 @@ int main(int argc, char const *argv[]){
                 packet[packetIndex++] = read_char;
                 break;
             }
-
-
-            printf("%d:%s", n, read_buf);
         }
     }
 
