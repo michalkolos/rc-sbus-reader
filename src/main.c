@@ -76,7 +76,9 @@ int main(int argc, char const *argv[]){
         int n = read(serial_port, &read_buf, sizeof(read_buf));
         // n is the number of bytes read. n may be 0 if no bytes were received, and can also be negative to signal an error.
 
-        printf("%d:/t%s", n, read_buf);
+        if(n >= 0){
+            printf("%d:/t%s", n, read_buf);
+        }
     }
 
     close(serial_port);
