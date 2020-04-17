@@ -70,7 +70,7 @@ int main(int argc, char const *argv[]){
 
     char read_char = 0;
     char packet[16];
-    char packetIndex = 0;
+    int packetIndex = 0;
     
 
     // Read bytes. The behaviour of read() (e.g. does it block?,
@@ -78,7 +78,7 @@ int main(int argc, char const *argv[]){
     // settings above, specifically VMIN and VTIME
     
     while(1){
-        int n = read(serial_port, read_char, sizeof(read_buf));
+        int n = read(serial_port, &read_char, sizeof(read_buf));
         // n is the number of bytes read. n may be 0 if no bytes were received, and can also be negative to signal an error.
 
         if(n >= 0){
@@ -90,7 +90,7 @@ int main(int argc, char const *argv[]){
                 break;
 
             case 0x00:
-            
+
                 for(int i = 0; i < 16; i++){
                     printf("%c ", packet[i]);
                 }
