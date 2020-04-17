@@ -108,6 +108,7 @@ int main(int argc, char const *argv[]){
             for(int i = 0; i < strlen(read_buf); i++){
                     printf("%d ", (int)read_buf[i]);
                 }
+            printf("\n");
 
             // printf("%s\n", read_buf);
         }
