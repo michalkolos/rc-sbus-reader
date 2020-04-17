@@ -33,7 +33,7 @@ int main(int argc, char const *argv[]){
     // Modify configuration
     tty.c_cflag |= PARENB;          // Set parity bit, enabling parity
     tty.c_cflag |= CS8;             // 8 bits per byte
-    tty.c_cflag &= ~CRTSCTS;        // Disable RTS/CTS hardware flow control
+    // tty.c_cflag &= ~CRTSCTS;        // Disable RTS/CTS hardware flow control
     tty.c_cflag |= CREAD | CLOCAL;  // Turn on READ & ignore ctrl lines (CLOCAL = 1)
     tty.c_lflag &= ~ICANON;         // Disable canonical mode
     tty.c_lflag &= ~ECHO;           // Disable echo
@@ -53,7 +53,7 @@ int main(int argc, char const *argv[]){
     // tty.c_oflag &= ~ONOEOT; // Prevent removal of C-d chars (0x004) in output (NOT PRESENT IN LINUX)
 
     tty.c_cc[VTIME] = 10;    // Wait for up to 1s (10 deciseconds), returning as soon as any data is received.
-    tty.c_cc[VMIN] = 0;
+    tty.c_cc[VMIN] = 25;
 
     // Specifying a custom baud rate when using GNU C
     cfsetispeed(&tty, 100000);
@@ -83,27 +83,29 @@ int main(int argc, char const *argv[]){
 
         if(n >= 0){
 
-            switch (read_buf[0])
-            {
-            case 0x0F:
-                packetIndex = 0;
-                printf("Packet Start\n");
-                break;
+            // switch (read_buf[0])
+            // {
+            // case 0x0F:
+            //     packetIndex = 0;
+            //     printf("Packet Start\n");
+            //     break;
 
-            case 0x00:
+            // case 0x00:
 
-                for(int i = 0; i < 16; i++){
-                    printf("%c ", packet[i]);
-                }
+            //     for(int i = 0; i < 16; i++){
+            //         printf("%c ", packet[i]);
+            //     }
 
-                printf("\nPacket end\n");
+            //     printf("\nPacket end\n");
 
-                break;
+            //     break;
             
-            default:
-                packet[packetIndex++] = read_char;
-                break;
-            }
+            // default:
+            //     packet[packetIndex++] = read_char;
+            //     break;
+            // }
+
+            printf("%s\n", read_buf);
         }
     }
 
