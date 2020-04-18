@@ -1,2 +1,2 @@
 # rc-sbus-reader
-A service that reads serial messages encoded with SBUS protocol from UART. 
+A simple program that reads serial packages encoded with SBUS protocol sent to serial port. Works on Raspberry Pi and FrSky SBUS compatible radio receiver. 
