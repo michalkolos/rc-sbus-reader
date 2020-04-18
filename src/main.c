@@ -28,7 +28,7 @@
     static const uint8_t _payloadSize = 24;
     static const uint8_t _sbusLostFrame = 0x04;
     static const uint8_t _sbusFailSafe = 0x08;
-    static const char _serialPath[] = "/dev/AMA0";
+    static const char _serialPath[] = "/dev/ttyUSB0";
 
     int serial_port = -1;
 
@@ -45,17 +45,17 @@ int main(int argc, char const *argv[]){
         // char buffer[1256];
         serialRead(frame);
 
-        for(int i = 0; i < _payloadSize; i++){
-            printf("%3d ", frame[i]);
-        }
-        printf("\n");
-
-        // sbusParse(frame, channels);
-
-        // for(int i = 0; i < _numChannels; i++){
-        //     printf("%4d ", channels[i]);
+        // for(int i = 0; i < _payloadSize; i++){
+        //     printf("%3d ", frame[i]);
         // }
         // printf("\n");
+
+        sbusParse(frame, channels);
+
+        for(int i = 0; i < _numChannels; i++){
+            printf("%4d ", channels[i]);
+        }
+        printf("\n");
     }
 
 
@@ -141,6 +141,7 @@ int sbusParse(uint8_t* frame, uint16_t* channels){
 
 int serialBegin(){
 
+    // serial_port = open(_serialPath, O_RDWR | O_NOCTTY);
     serial_port = open(_serialPath, O_RDWR | O_NOCTTY);
 
     // Check for errors
@@ -160,6 +161,23 @@ int serialBegin(){
     tio.c_cflag |= BOTHER;
     tio.c_cflag |= CSTOPB; // 2 stop bits
     tio.c_cflag |= PARENB; // enable parity bit, even by default
+
+
+    tio.c_cflag |= CS8; 
+    tio.c_cflag &= ~CRTSCTS;
+    tio.c_cflag |= CREAD | CLOCAL;
+    tio.c_lflag &= ~ICANON;
+    tio.c_lflag &= ~ECHO;
+    tio.c_lflag &= ~ISIG;
+    tio.c_iflag &= ~(IXON | IXOFF | IXANY);
+    tio.c_iflag &= ~(IGNBRK|BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL);
+    tio.c_oflag &= ~OPOST;
+    tio.c_oflag &= ~ONLCR;
+    tio.c_cc[VTIME] = 10;
+    tio.c_cc[VMIN] = 0;
+
+
+
     tio.c_ispeed = tio.c_ospeed = _sbusBaud;
 
     if(ioctl(serial_port, TCSETS2, &tio)){
@@ -182,8 +200,11 @@ int serialRead(uint8_t* frame){
     //     printf("Error %i from ioctl FIONREAD: %s\n", errno, strerror(errno));
     // }
     // if(available >0){
+    
+
     while(frameCouter < _payloadSize){
         int len = read(serial_port, byteBuffer, sizeof(byteBuffer));
+        // printf("%s ", byteBuffer);
         
         if(byteBuffer[0] == _sbusHeader && prevByte == _sbusFooter){
             frameCouter = 0;
@@ -196,6 +217,8 @@ int serialRead(uint8_t* frame){
 
         prevByte = byteBuffer[0];
     }
+
+    // printf("\t\t");
 
 
 
