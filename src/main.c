@@ -14,25 +14,35 @@
 #include <asm/termbits.h>
 #include <sys/ioctl.h>
 
-    int serialBegin();
-    int serialRead(uint8_t* frame);
-    int sbusParse(uint8_t* frame, uint16_t* channels);
-    void sbusPrint(uint16_t* channels);
+
+#define FAILSAFE 18
+#define LOST_FRAME 19
 
 
-    static const uint32_t _sbusBaud = 100000; 
-    static const uint8_t _numChannels = 20;
-    static const uint8_t _sbusHeader = 0x0F;
-    static const uint8_t _sbusFooter = 0x00;
-    // static const uint8_t _sbus2Footer = 0x04;
-    // static const uint8_t _sbus2Mask = 0x0F;
-    // static const uint32_t SBUS_TIMEOUT_US = 7000;
-    static const uint8_t _payloadSize = 24;
-    static const uint8_t _sbusLostFrame = 0x04;
-    static const uint8_t _sbusFailSafe = 0x08;
-    static const char _serialPath[] = "/dev/ttyUSB0";
+int serialBegin();
+int serialRead(uint8_t* frame);
+int sbusParse(uint8_t* frame, uint16_t* channels);
+void sbusPrint(uint16_t* channels);
 
-    int serial_port = -1;
+
+static const uint32_t _sbusBaud = 100000; 
+static const uint8_t _numChannels = 20;
+static const uint8_t _sbusHeader = 0x0F;
+static const uint8_t _sbusFooter = 0x00;
+
+static const uint8_t _channel16 = 0x01;
+static const uint8_t _channel17 = 0x02;
+static const uint8_t _sbusLostFrame = 0x04;
+static const uint8_t _sbusFailSafe = 0x08;
+
+// static const uint8_t _sbus2Footer = 0x04;
+// static const uint8_t _sbus2Mask = 0x0F;
+// static const uint32_t SBUS_TIMEOUT_US = 7000;
+static const uint8_t _payloadSize = 24;
+
+static const char _serialPath[] = "/dev/ttyUSB0";
+
+int serial_port = -1;
 
 
 int main(int argc, char const *argv[]){
@@ -86,8 +96,8 @@ void sbusPrint(uint16_t* channels){
  *      - 0 - 15:   16 analogue channels,
  *      - 16 - 17:  2 additional digital channels, 
  *      - 18: failsafe activated bit,
- *      - 19: lost packet bit.
- * @return int - 1 in noramal operation, -1 when lost packet detected.
+ *      - 19: lost frame bit.
+ * @return int - 1 in noramal operation, -1 when lost frame was detected.
  */
 int sbusParse(uint8_t* frame, uint16_t* channels){
 
@@ -108,7 +118,32 @@ int sbusParse(uint8_t* frame, uint16_t* channels){
         channels[14] = (uint16_t) ((frame[19]>>2 | frame[20]<<6)                     & 0x07FF);
         channels[15] = (uint16_t) ((frame[20]>>5 | frame[21]<<3)                     & 0x07FF);
 
-        // TODO: Parse 2 digital channels, failsafe and lost packet.
+        if (frame[22] & _channel16) {
+      		channels[16] = 1;
+    	} else {
+			channels[16] = 1;
+        }
+
+        if (frame[22] & _channel17) {
+      		channels[17] = 1;
+    	} else {
+			channels[17] = 1;
+        }
+
+        if (frame[22] & _sbusFailSafe) {
+      		channels[FAILSAFE] = 1;
+    	} else {
+			channels[FAILSAFE] = 0;
+        }
+
+
+        if (frame[22] & _sbusLostFrame) {
+      	    channels[LOST_FRAME] = 1;
+            return -1;
+    	} else {
+			channels[LOST_FRAME] = 0;
+        }
+
     return 1;
 }
 
@@ -189,8 +224,11 @@ int serialRead(uint8_t* frame){
 
     while(frameCouter < _payloadSize){
         int len = read(serial_port, byteBuffer, sizeof(byteBuffer));
-        // TODO: Add error handling.
 
+        if(len < 0){
+            printf("Error %i from read: %s\n", errno, strerror(errno));
+            return -1;  
+        }
         
         if(byteBuffer[0] == _sbusHeader && prevByte == _sbusFooter){
             frameCouter = 0;
