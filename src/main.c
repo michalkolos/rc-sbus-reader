@@ -2,14 +2,14 @@
 // C library headers
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
+
 
 // Linux headers
 #include <fcntl.h> // Contains file controls like O_RDWR
 #include <errno.h> // Error integer and strerror() function
-// #include <termios.h> // Contains POSIX terminal control definitions
 #include <unistd.h> // write(), read(), close()
 
-#include <inttypes.h>
 #include <asm/ioctls.h>
 #include <asm/termbits.h>
 #include <sys/ioctl.h>
@@ -28,7 +28,7 @@
     static const uint8_t _payloadSize = 24;
     static const uint8_t _sbusLostFrame = 0x04;
     static const uint8_t _sbusFailSafe = 0x08;
-    static const char _serialPath[] = "/dev/ttyUSB0";
+    static const char _serialPath[] = "/dev/ttyS0";
 
     int serial_port = -1;
 
@@ -61,51 +61,6 @@ int main(int argc, char const *argv[]){
 
 
 
-    
-
-        //     // switch (read_buf[0])
-        //     // {
-        //     // case 0x0F:
-        //     //     packetIndex = 0;
-        //     //     printf("Packet Start\n");
-        //     //     break;
-
-        //     // case 0x00:
-
-        //     //     for(int i = 0; i < 16; i++){
-        //     //         printf("%d ", (int)packet[i]);
-        //     //     }
-
-        //     //     printf("\nPacket end\n");
-
-        //     //     break;
-            
-        //     // default:
-        //     //     packet[packetIndex++] = read_char;
-        //     //     break;
-        //     // }
-
-        //     // 16 channels of 11 bit data
-   
-		// 	channels[0]  = (int) ((read_buf[0]     | read_buf[1] <<8)                     & 0x07FF);
-		// 	channels[1]  = (int) ((read_buf[1]>>3  | read_buf[2] <<5)                     & 0x07FF);
-		// 	channels[2]  = (int) ((read_buf[2]>>6  | read_buf[3] <<2 | read_buf[4]<<10)   & 0x07FF);
-		// 	channels[3]  = (int) ((read_buf[4]>>1  | read_buf[5] <<7)                     & 0x07FF);
-		// 	channels[4]  = (int) ((read_buf[5]>>4  | read_buf[6] <<4)                     & 0x07FF);
-		// 	channels[5]  = (int) ((read_buf[6]>>7  | read_buf[7] <<1 | read_buf[8]<<9)    & 0x07FF);
-		// 	channels[6]  = (int) ((read_buf[8]>>2  | read_buf[9] <<6)                     & 0x07FF);
-		// 	channels[7]  = (int) ((read_buf[9]>>5  | read_buf[10]<<3)                     & 0x07FF);
-		// 	channels[8]  = (int) ((read_buf[11]    | read_buf[12]<<8)                     & 0x07FF);
-		// 	channels[9]  = (int) ((read_buf[12]>>3 | read_buf[13]<<5)                     & 0x07FF);
-		// 	channels[10] = (int) ((read_buf[13]>>6 | read_buf[14]<<2 | read_buf[15]<<10)  & 0x07FF);
-		// 	channels[11] = (int) ((read_buf[15]>>1 | read_buf[16]<<7)                     & 0x07FF);
-		// 	channels[12] = (int) ((read_buf[16]>>4 | read_buf[17]<<4)                     & 0x07FF);
-		// 	channels[13] = (int) ((read_buf[17]>>7 | read_buf[18]<<1 | read_buf[19]<<9)   & 0x07FF);
-		// 	channels[14] = (int) ((read_buf[19]>>2 | read_buf[20]<<6)                     & 0x07FF);
-		// 	channels[15] = (int) ((read_buf[20]>>5 | read_buf[21]<<3)                     & 0x07FF);
-
-
-
 
     close(serial_port);
 
@@ -113,6 +68,7 @@ int main(int argc, char const *argv[]){
 
     return 0;
 }
+
 
 
 int sbusParse(uint8_t* frame, uint16_t* channels){
