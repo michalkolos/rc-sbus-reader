@@ -14,63 +14,90 @@
 #include <asm/termbits.h>
 #include <sys/ioctl.h>
 
-    int serialBegin();
-    int serialRead(uint8_t* frame);
-    int sbusParse(uint8_t* frame, uint16_t* channels);
+#define FAILSAFE 18
+#define LOST_FRAME 19
 
-    static const uint32_t _sbusBaud = 100000;
-    static const uint8_t _numChannels = 16;
-    static const uint8_t _sbusHeader = 0x0F;
-    static const uint8_t _sbusFooter = 0x00;
-    static const uint8_t _sbus2Footer = 0x04;
-    static const uint8_t _sbus2Mask = 0x0F;
-    static const uint32_t SBUS_TIMEOUT_US = 7000;
-    static const uint8_t _payloadSize = 24;
-    static const uint8_t _sbusLostFrame = 0x04;
-    static const uint8_t _sbusFailSafe = 0x08;
-    static const char _serialPath[] = "/dev/ttyS0";
 
-    int serial_port = -1;
+int serialBegin();
+int serialRead(uint8_t* frame);
+int sbusParse(uint8_t* frame, uint16_t* channels);
+void sbusPrint(uint16_t* channels);
+
+
+static const uint32_t _sbusBaud = 100000; 
+static const uint8_t _numChannels = 20;
+static const uint8_t _sbusHeader = 0x0F;
+static const uint8_t _sbusFooter = 0x00;
+
+static const uint8_t _channel16 = 0x01;
+static const uint8_t _channel17 = 0x02;
+static const uint8_t _sbusLostFrame = 0x04;
+static const uint8_t _sbusFailSafe = 0x08;
+
+// static const uint8_t _sbus2Footer = 0x04;
+// static const uint8_t _sbus2Mask = 0x0F;
+// static const uint32_t SBUS_TIMEOUT_US = 7000;
+static const uint8_t _payloadSize = 24;
+
+static const char _serialPath[] = "/dev/ttyUSB0";
+
+int serial_port = -1;
 
 
 int main(int argc, char const *argv[]){
 
-    serialBegin();
-
     uint16_t channels[_numChannels];
-
     uint8_t frame[_payloadSize];
 
+    if(!serialBegin()){
+        return -1;
+    }
+    
     while(1){
-        // char buffer[1256];
-        serialRead(frame);
-
-        // for(int i = 0; i < _payloadSize; i++){
-        //     printf("%3d ", frame[i]);
-        // }
-        // printf("\n");
-
-        sbusParse(frame, channels);
-
-        for(int i = 0; i < _numChannels; i++){
-            printf("%4d ", channels[i]);
+        if(serialRead(frame)){
+            sbusParse(frame, channels);
+            sbusPrint(channels);  
         }
-        printf("\n");
+              
     }
 
-
-
-
-
     close(serial_port);
-
-       
-
     return 0;
 }
 
 
 
+
+/**
+ * @brief Prints channel data to the console.
+ * 
+ * @param channels - array of values for individual channels.
+ */
+void sbusPrint(uint16_t* channels){
+
+    for(int i = 0; i < _numChannels; i++){
+            printf("%4d ", channels[i]);
+        }
+        printf("\n");
+
+    return;
+}
+
+
+
+/**
+ * @brief Parses raw data into usefull values representing separate controll 
+ * channels
+ * 
+ * @param frame - raw data received from the serial interface.
+ * @param channels - array of integers that will hold decoded data. Must have the
+ * length of at least 20:
+ *      - 0 - 15:   16 analogue channels,
+ *      - 16 - 17:  2 additional digital channels, 
+ *      - 18: failsafe activated bit,
+ *      - 19: lost frame bit.
+ * @return int - 1 in noramal operation, -1 when lost frame was detected.
+ */
 int sbusParse(uint8_t* frame, uint16_t* channels){
 
     	channels[0]  = (uint16_t) ((frame[0]     | frame[1] <<8)                     & 0x07FF);
@@ -90,19 +117,50 @@ int sbusParse(uint8_t* frame, uint16_t* channels){
         channels[14] = (uint16_t) ((frame[19]>>2 | frame[20]<<6)                     & 0x07FF);
         channels[15] = (uint16_t) ((frame[20]>>5 | frame[21]<<3)                     & 0x07FF);
 
+        if (frame[22] & _channel16) {
+      		channels[16] = 1;
+    	} else {
+			channels[16] = 1;
+        }
 
-    return 0;
+        if (frame[22] & _channel17) {
+      		channels[17] = 1;
+    	} else {
+			channels[17] = 1;
+        }
+
+        if (frame[22] & _sbusFailSafe) {
+      		channels[FAILSAFE] = 1;
+    	} else {
+			channels[FAILSAFE] = 0;
+        }
+
+
+        if (frame[22] & _sbusLostFrame) {
+      	    channels[LOST_FRAME] = 1;
+            return -1;
+    	} else {
+			channels[LOST_FRAME] = 0;
+        }
+
+    return 1;
 }
 
 
+
+/**
+ * @brief Initializes Rasberry Pi's serial interface to accept communication 
+ * with the radio receiver.
+ * 
+ * @return int: 1 - on success, -1 - on failure
+ */
 int serialBegin(){
 
-    // serial_port = open(_serialPath, O_RDWR | O_NOCTTY);
     serial_port = open(_serialPath, O_RDWR | O_NOCTTY);
 
-    // Check for errors
     if (serial_port < 0) {
         printf("Error %i from open: %s\n", errno, strerror(errno));
+        return -1;
     }
 
     struct termios2 tio;
@@ -118,7 +176,6 @@ int serialBegin(){
     tio.c_cflag |= CSTOPB; // 2 stop bits
     tio.c_cflag |= PARENB; // enable parity bit, even by default
 
-
     tio.c_cflag |= CS8; 
     tio.c_cflag &= ~CRTSCTS;
     tio.c_cflag |= CREAD | CLOCAL;
@@ -132,8 +189,6 @@ int serialBegin(){
     tio.c_cc[VTIME] = 10;
     tio.c_cc[VMIN] = 0;
 
-
-
     tio.c_ispeed = tio.c_ospeed = _sbusBaud;
 
     if(ioctl(serial_port, TCSETS2, &tio)){
@@ -141,42 +196,48 @@ int serialBegin(){
         return -1;
     }
 
-    return 0;
+    return 1;
 }
 
 
+/**
+ * @brief Reads raw data from the serial interface.
+ * 
+ * @param frame - an array of bytes to store incomming data. Must be minimum 24 
+ * bytes long
+ * @return int: 1 - on success, -1 - on failure
+ */
 int serialRead(uint8_t* frame){
 
     char byteBuffer[1];
     char prevByte = _sbusFooter;
     int frameCouter = 0;
 
+
+    // TODO: Check if testing for incomming data on serial port is necessary.
     // int available = 0;
     // if( ioctl(serial_port, FIONREAD, &available ) < 0 ) {
     //     printf("Error %i from ioctl FIONREAD: %s\n", errno, strerror(errno));
     // }
     // if(available >0){
-    
 
     while(frameCouter < _payloadSize){
         int len = read(serial_port, byteBuffer, sizeof(byteBuffer));
-        // printf("%s ", byteBuffer);
+
+        if(len < 0){
+            printf("Error %i from read: %s\n", errno, strerror(errno));
+            return -1;  
+        }
         
         if(byteBuffer[0] == _sbusHeader && prevByte == _sbusFooter){
             frameCouter = 0;
-            // printf("\n");
         }else{
             frame[frameCouter] = (uint8_t)byteBuffer[0]; 
-            // printf("%d: %1s  ",frameCouter, byteBuffer);
             frameCouter++;
         }
 
         prevByte = byteBuffer[0];
     }
 
-    // printf("\t\t");
-
-
-
-    return 0;
+    return 1;
 }
