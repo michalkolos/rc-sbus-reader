@@ -39,7 +39,7 @@ static const uint8_t _sbusFailSafe = 0x08;
 // static const uint32_t SBUS_TIMEOUT_US = 7000;
 static const uint8_t _payloadSize = 24;
 
-static const char _serialPath[] = "/dev/ttyUSB0";
+static const char _serialPath[] = "/dev/ttyS0";
 
 int serial_port = -1;
 
